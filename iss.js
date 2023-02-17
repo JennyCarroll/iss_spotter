@@ -1,9 +1,7 @@
 // It will contain most of the logic for fetching the data from each API endpoint.
-// Fetch our IP Address
-// Fetch the geo coordinates (Latitude & Longitude) for our IP
-// Fetch the next ISS flyovers for our geo coordinates
 const request = require("request");
 
+// XFetch our IP Address
 // Define a function fetchMyIP which will asynchronously return our IP Address using an API.
 //getchMyIP is a function that accepts a callback as a parameter and calls it
 // (to pass back an error or the IP string) which it gained through an API request
@@ -27,6 +25,7 @@ const fetchMyIP = function (callback) {
   });
 };
 
+// Fetch the geo coordinates (Latitude & Longitude) for our IP
 //Define a function which takes in an IP address and returns the latitude and longitude for it.
 //it should take in two arguments, IP as a string and a callback.
 const fetchCoordsByIP = function (IP, callback) {
@@ -35,7 +34,12 @@ const fetchCoordsByIP = function (IP, callback) {
       callback(error, null);
       return;
     }
-
+    // if non-200 status, assume server error
+    if (response.statusCode !== 200) {
+      const msg = `Status Code ${response.statusCode} when fetching coordinatess. Response: ${body}`;
+      callback(Error(msg), null);
+      return;
+    }
     // In the function, make the request to the API, and have it pass back the relevant
     // (lat/lng) data as an object via callback.
     const parsedBody = JSON.parse(body);
@@ -53,5 +57,78 @@ const fetchCoordsByIP = function (IP, callback) {
   });
 };
 
+// * Makes a single API request to retrieve upcoming ISS fly over times the for the given lat/lng coordinates.
+// As input it expects a latitude/longitude pair, an altitude, and how many results to return.
+
+const fetchISSFlyOverTimes = function (coordinates, callback) {
+  request(
+    `https://iss-flyover.herokuapp.com/json/?lat=${coordinates.latitude}&lon=${coordinates.longitude}`,
+    (error, response, body) => {
+      if (error) {
+        callback(error, null);
+        return;
+      }
+
+      // if non-200 status, assume server error
+      if (response.statusCode !== 200) {
+        const msg = `Status Code ${response.statusCode} when fetching ISS pass times. Response: ${body}`;
+        callback(Error(msg), null);
+        return;
+      }
+      const passes = JSON.parse(body).response;
+
+      // As output you get the same inputs back (for checking) and a time stamp when the API ran
+      // in addition to a success or failure message and a list of passes.
+      // Each pass has a duration in seconds and a rise time as a unix time stamp.
+      callback(null, passes);
+    }
+  );
+};
+
+//we need one primary function for index.js to call// error, passTimes
+const nextISSTimesForMyLocation = function (callback) {
+  // if (error) {
+  //   console.log("It didn't work!", error);
+  //   return;
+  // }
+  //we call my fetchMyIP function (that lives in iss.js) and pass in anline function
+  // that uses the error and ip information gained by calling fetchMyIP
+  fetchMyIP((error, ip) => {
+    if (error) {
+      return callback(error, null);
+    }
+
+    // console.log("It worked! Returned IP:", ip);
+
+    // we call my fetchCoordsByIP function (that lives in iss.js) and pass in the IP address and an anline function
+    // that uses the error and data (longitude and lattitude) information gained by calling fetchCoordsByIP
+    fetchCoordsByIP(ip, (error, coordinates) => {
+      if (error) {
+        return callback(error, null);
+      }
+
+      // console.log("It worked! Returned latitude and longitude:", coordinates);
+
+      fetchISSFlyOverTimes(coordinates, (error, passes) => {
+        if (error) {
+          return callback(error, null);
+        }
+        callback(null, passes);
+        // console.log("It worked! Returned flyover times:", passTimes);
+      });
+    });
+  });
+
+  // success, print out the deets!
+  // console.log(passes);
+};
+
 //is this right?
-module.exports = { fetchMyIP, fetchCoordsByIP };
+module.exports = {
+  fetchMyIP,
+  fetchCoordsByIP,
+  fetchISSFlyOverTimes,
+  nextISSTimesForMyLocation,
+};
+
+//I guess I didn't need this because the API outputs it already let unixTimeStamp = new Date().getTime()
