@@ -15,7 +15,7 @@ nextISSTimesForMyLocation((error, passes) => {
   if (error) {
     console.log(error);
   }
-  console.log(passes);
+  // console.log(passes);
   for (let object of passes) {
     const dateTime = new Date(0);
     const dateTimeInNumbers = dateTime.setUTCSeconds(object.risetime);

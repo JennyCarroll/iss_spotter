@@ -25,6 +25,7 @@ const fetchMyIP = function (callback) {
   });
 };
 
+
 // Fetch the geo coordinates (Latitude & Longitude) for our IP
 //Define a function which takes in an IP address and returns the latitude and longitude for it.
 //it should take in two arguments, IP as a string and a callback.
