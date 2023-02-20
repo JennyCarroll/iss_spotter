@@ -1,6 +1,5 @@
 const { nextISSTimesForMyLocation } = require("./iss_promised");
 
-//why don't I have to pass in the body each time?
 // fetchMyIP()
 //   .then(fetchCoordsByIP(body))
 //   .then(fetchISSFlyOverTimes(body));
